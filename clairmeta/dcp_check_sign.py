@@ -76,14 +76,18 @@ class Checker(CheckerBase):
             certif_bytes = base64.b64decode(cert["X509Certificate"])
             certif = x509.load_der_x509_certificate(certif_bytes)
         except Exception as e:
-            self.error("Invalid certificate encoding : {}".format(str(e)))
+            self.fatal_error(
+                "Invalid certificate encoding : {}\nDigital Signature checks will be skipped for this asset.".format(
+                    str(e)
+                ),
+                "decoding",
+            )
 
         try:
             _ = certif.extensions
-            valid_extensions = True
+            return certif
         except ValueError as e:
-            valid_extensions = False
-            self.error(
+            self.fatal_error(
                 "Error while parsing extensions, skipping checks for certificate {}: {}".format(
                     certif.serial_number, e
                 ),
@@ -91,8 +95,6 @@ class Checker(CheckerBase):
                 "Encountered non-conformant extensions encoding.\n"
                 "  Has been observed on certificate's BasicConstraints extension, see https://github.com/pyca/cryptography/issues/3856",
             )
-
-        return certif, valid_extensions
 
     def run_checks(self):
         sources = self.dcp._list_pkl + self.dcp._list_cpl
@@ -117,28 +119,32 @@ class Checker(CheckerBase):
             self.cert_list = []
             self.cert_chains = source_xml["Signature"]["KeyInfo"]["X509Data"]
 
+            cert_decoding_errors = False
+
             for index, cert in reversed(list(enumerate(self.cert_chains))):
-                cert_x509, cert_valid = self.run_check(self.certif_der_decoding, cert, stack=asset_stack)
+                cert_x509 = self.run_check(
+                    self.certif_der_decoding, cert, stack=asset_stack
+                )
                 if not cert_x509:
+                    cert_decoding_errors = True
                     continue
 
                 self.cert_list.append(cert_x509)
 
                 stack = asset_stack + ["Certificate {}".format(cert_x509.serial_number)]
 
-                if cert_valid:
-                    [
-                        self.run_check(check, cert_x509, index, stack=stack)
-                        for check in self.find_check("certif")
-                    ]
+                [
+                    self.run_check(check, cert_x509, index, stack=stack)
+                    for check in self.find_check("certif")
+                ]
 
-                    [
-                        self.run_check(check, cert_x509, cert, stack=stack)
-                        for check in self.find_check("xml_certif")
-                    ]
+                [
+                    self.run_check(check, cert_x509, cert, stack=stack)
+                    for check in self.find_check("xml_certif")
+                ]
 
-            if not self.cert_list:
-                return self.checks
+            if not self.cert_list or cert_decoding_errors:
+                continue
 
             checks = self.find_check("sign")
             [self.run_check(check, source_xml, stack=asset_stack) for check in checks]
@@ -556,7 +562,7 @@ class Checker(CheckerBase):
                     signature=cert.signature,
                     data=cert.tbs_certificate_bytes,
                     padding=PKCS1v15(),
-                    algorithm=cert.signature_hash_algorithm
+                    algorithm=cert.signature_hash_algorithm,
                 )
             else:
                 cert.verify_directly_issued_by(issuer_cert)
