@@ -12,7 +12,7 @@ WORK_DIR=`mktemp -d`
 cd "$WORK_DIR"
 
 git clone https://github.com/cinecert/asdcplib.git && cd asdcplib
-git checkout rel_2_13_0
+git checkout rel_2_13_1
 mkdir build && cd build
 
 cmake ..
