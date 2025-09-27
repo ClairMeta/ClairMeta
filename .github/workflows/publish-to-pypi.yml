@@ -8,6 +8,11 @@ on:
 jobs:
   build-n-publish:
     runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/clairmeta/
+    permissions:
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python 3.9
@@ -30,5 +35,3 @@ jobs:
           .
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
