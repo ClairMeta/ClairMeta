@@ -15,7 +15,7 @@ git clone https://github.com/cinecert/asdcplib.git && cd asdcplib
 git checkout rel_2_13_1
 mkdir build && cd build
 
-cmake -DCMAKE_MACOSX_RPATH=ON ..
+cmake -DCMAKE_MACOSX_RPATH=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.5 ..
 sudo cmake --build . --target install --config Release -- -j$(sysctl -n hw.ncpu)
 
 cd "$BASE_DIR"
