@@ -88,8 +88,8 @@ class Checker(CheckerBase):
             return certif
         except ValueError as e:
             self.fatal_error(
-                "Error while parsing extensions, skipping checks for certificate {}: {}".format(
-                    certif.serial_number, e
+                "Error parsing certificate extensions : {}\nDigital Signature checks will be skipped for this asset.".format(
+                    str(e)
                 ),
                 "extensions",
                 "Encountered non-conformant extensions encoding.\n"
