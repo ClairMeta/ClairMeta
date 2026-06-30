@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "clairmeta"
 version = "1.6.1"
@@ -36,6 +40,9 @@ keywords = ["digital", "cinema", "dcp", "dcdm", "dsm", "check", "probe", "smpte"
 
 [project.urls]
 Repository = "https://github.com/Ymagis/ClairMeta"
+
+[tool.setuptools.package-data]
+clairmeta = ["xsd/*"]
 
 [dependency-groups]
 dev = [

@@ -1,5 +1,4 @@
 include LICENSE CONTRIBUTORS MANIFEST.in *.rst
-graft clairmeta/xsd
 graft tests
 prune tests/resources
 global-exclude *.py[cod]
