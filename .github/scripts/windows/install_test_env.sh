@@ -12,10 +12,11 @@ WORK_DIR=`mktemp -d`
 cd "$WORK_DIR"
 
 git clone https://github.com/cinecert/asdcplib.git && cd asdcplib
-git checkout rel_2_13_1
+git checkout rel_2_13_2
 mkdir build && cd build
 
 cmake \
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
     -DCMAKE_INSTALL_PREFIX=$VCPKG_INSTALLATION_ROOT/installed/x64-windows \
     -DOpenSSLLib_PATH=$VCPKG_INSTALLATION_ROOT/installed/x64-windows/lib/libcrypto.lib \
     -DOpenSSLLib_include_DIR=$VCPKG_INSTALLATION_ROOT/installed/x64-windows/include \
