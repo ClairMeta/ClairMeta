@@ -12,7 +12,7 @@ WORK_DIR=`mktemp -d`
 cd "$WORK_DIR"
 
 git clone https://github.com/cinecert/asdcplib.git && cd asdcplib
-git checkout rel_2_13_1
+git checkout rel_2_13_2
 mkdir build && cd build
 
 cmake -DCMAKE_MACOSX_RPATH=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.5 ..
