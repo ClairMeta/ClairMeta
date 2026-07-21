@@ -29,7 +29,8 @@ RULES = {
         'FilmTitle': r'(^[a-zA-Z0-9-]{1,14}$)',
         'ContentType':
             r'(^'
-            r'(?P<Type>FTR|EPS|TLR|TSR|PRO|TST|RTG-F|RTG-T|SHR|ADV|XSN|PSA|POL)'
+            r'(?P<Type>FTR|EPS|TLR|TSR|PRO|TST|RTG-F|RTG-T|RTG|SHR|ADV|XSN|PSA|POL'
+            r'|CLP|STR|HLT|EVT)'
             r'(-(?P<Version>\d))?'
             r'(-(?P<Temporary>Temp))?'
             r'(-(?P<PreRelease>Pre))?'
@@ -64,7 +65,7 @@ RULES = {
             r'(-(?P<HearingImpaired>HI))?'
             r'(-(?P<VisionImpaired>VI))?'
             r'(-(?P<SignLanguage>SL))?'
-            r'(-(?P<ImmersiveSound>(ATMOS|Atmos|AURO|DTS-X)))?'
+            r'(-(?P<ImmersiveSound>(ATMOS|Atmos|AURO|DTS-X|IAB)))?'
             r'(-(?P<MotionSimulator>(DBOX|Dbox)))?'
             r'$)',
         'Resolution': r'(^2K|4K$)',
