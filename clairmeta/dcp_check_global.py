@@ -79,7 +79,11 @@ class Checker(CheckerBase):
         }
 
         for k, v in restricted_lists.items():
-            if len(v) == 0:
+            # VolumeIndex is deprecated (ST 429-9:2014 section 8) and optional;
+            # only the AssetMap is mandatory. A conformant single-volume SMPTE
+            # DCP commonly omits VOLINDEX, so do not flag a missing one. Having
+            # more than one of either file remains an error.
+            if len(v) == 0 and k == "Assetmap":
                 self.error("Missing {} file".format(k))
             if len(v) > 1:
                 self.error("Multiple {} files found".format(k))
