@@ -666,7 +666,11 @@ class Checker(CheckerBase):
     def check_sign_signature_algorithm(self, source):
         """XML signature algorithm check.
 
-        References: N/A
+        References:
+            SMPTE ST 429-8:2007 5.10
+            SMPTE ST 429-7:2006 6.13
+            IETF RFC 4051 (XML-Signature SignatureMethod URIs)
+            IETF RFC 3275 (XML-Signature Syntax and Processing)
         """
         # Additionnal. XML coherence checks
         signed_info = source["Signature"]["SignedInfo"]
@@ -683,7 +687,8 @@ class Checker(CheckerBase):
     def check_sign_canonicalization_algorithm(self, source):
         """XML canonicalization algorithm check.
 
-        References: N/A
+        References:
+            IETF RFC 3275 (XML-Signature Syntax and Processing)
         """
         signed_info = source["Signature"]["SignedInfo"]
         # Canonicalization algorithm
@@ -694,7 +699,8 @@ class Checker(CheckerBase):
     def check_sign_transform_algorithm(self, source):
         """XML signature transform algorithm check.
 
-        References: N/A
+        References:
+            IETF RFC 3275 (XML-Signature Syntax and Processing)
         """
         signed_info = source["Signature"]["SignedInfo"]
         # Transform alogrithm
@@ -705,7 +711,8 @@ class Checker(CheckerBase):
     def check_sign_digest_algorithm(self, source):
         """XML signature digest method check.
 
-        References: N/A
+        References:
+            IETF RFC 3275 (XML-Signature Syntax and Processing)
         """
         signed_info = source["Signature"]["SignedInfo"]
         # Digest algorithm
@@ -716,7 +723,8 @@ class Checker(CheckerBase):
     def check_sign_issuer_name(self, source):
         """XML signature issuer name check.
 
-        References: N/A
+        References:
+            IETF RFC 3275 (XML-Signature Syntax and Processing)
         """
         signer = source["Signer"]["X509Data"]["X509IssuerSerial"]
         # Signer Issuer Name
@@ -729,7 +737,8 @@ class Checker(CheckerBase):
     def check_sign_issuer_serial(self, source):
         """XML signature serial number check.
 
-        References: N/A
+        References:
+            IETF RFC 3275 (XML-Signature Syntax and Processing)
         """
         sig = source["Signer"]["X509Data"]["X509IssuerSerial"]
         # Signer Serial number
