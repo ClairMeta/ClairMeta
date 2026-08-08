@@ -23,6 +23,57 @@ from clairmeta.settings import DCP_SETTINGS
 from clairmeta.logger import get_log
 
 
+def collect_subtitle_elements(node, name):
+    """Every <name> element instance contained in a subtitle subtree.
+
+    WHY THIS EXISTS -- keys_by_name_dict() cannot be used to enumerate or count
+    elements. parse_xml stores an element's TEXT under a key equal to the
+    element name, alongside its attributes, so three <Image> elements become
+
+        {"Image": [{"Image@VAlign": "bottom", "Image": "a.png"},
+                   {"Image@VAlign": "bottom", "Image": "b.png"},
+                   {"Image@VAlign": "bottom", "Image": "c.png"}]}
+
+    keys_by_name_dict then matches the CONTAINER list *and* each element's text
+    child, returning a mixed list of n + 1 entries. Counting it reports one
+    element too many -- which rejects a subtitle carrying the legal maximum --
+    and iterating it yields the container list where a caller expects a
+    filename, which raises TypeError.
+
+    This returns one entry per element instance. An entry is a dict when the
+    element carries attributes and a plain string when it does not; use
+    subtitle_element_value() to get its text either way. Non-matching branches
+    are still traversed, so elements nested in a <Font> wrapper are found.
+    """
+    found = []
+    if isinstance(node, list):
+        for item in node:
+            found += collect_subtitle_elements(item, name)
+    elif isinstance(node, dict):
+        for key, value in node.items():
+            if key == name:
+                found += value if isinstance(value, list) else [value]
+            else:
+                found += collect_subtitle_elements(value, name)
+    return found
+
+
+def subtitle_element_value(element, name):
+    """Text of one element returned by collect_subtitle_elements().
+
+    With attributes the element is a dict carrying its text under the element
+    name; without attributes it is already the text.
+    """
+    if isinstance(element, dict):
+        return element.get(name)
+    return element
+
+
+def count_subtitle_elements(node, name):
+    """Number of <name> element instances (see collect_subtitle_elements)."""
+    return len(collect_subtitle_elements(node, name))
+
+
 class SubtitleUtils(object):
     def __init__(self, dcp):
         self.dcp = dcp
@@ -568,19 +619,17 @@ class Checker(CheckerBase):
             return
 
         for idx, st in enumerate(subtitles[0]):
-            text_count = len(keys_by_name_dict(st, "Text"))
+            text_count = count_subtitle_elements(st, "Text")
             if text_count > 6:
                 self.error(
-                    "Too many Text elements ({}) for subtitle {}".format(
-                        text_count, st["Subtitle@SpotNumber"]
-                    )
+                    "Too many Text elements ({}, maximum is 6) for subtitle "
+                    "{}".format(text_count, st["Subtitle@SpotNumber"])
                 )
-            img_count = len(keys_by_name_dict(st, "Image"))
-            if img_count > 6:
+            img_count = count_subtitle_elements(st, "Image")
+            if img_count > 3:
                 self.error(
-                    "Too many Image elements ({}) for subtitle {}".format(
-                        img_count, st["Subtitle@SpotNumber"]
-                    )
+                    "Too many Image elements ({}, maximum is 3) for subtitle "
+                    "{}".format(img_count, st["Subtitle@SpotNumber"])
                 )
 
     def check_subtitle_cpl_duration(self, playlist, asset, folder):
@@ -836,8 +885,13 @@ class Checker(CheckerBase):
         if self.dcp.schema != "Interop":
             return
 
-        imgs = keys_by_name_dict(st_dict, "Image")
-        for img in imgs:
+        # keys_by_name_dict would hand us the container list as well as the
+        # filenames; joining that list onto a path raises TypeError. Enumerate
+        # element instances instead and take each one's text.
+        for element in collect_subtitle_elements(st_dict, "Image"):
+            img = subtitle_element_value(element, "Image")
+            if not isinstance(img, str) or not img:
+                continue
             if not os.path.exists(os.path.join(folder, img)):
                 self.error(
                     "Subtitle image reference {} not found in folder {}"
