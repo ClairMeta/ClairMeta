@@ -3,6 +3,7 @@
 
 import os
 import platform
+import shutil
 import subprocess
 import xmltodict
 import contextlib
@@ -219,25 +220,21 @@ def unwrap_mxf(path, prefix=None, args=[]):
         unwrap_args = [ASDCP_UNWRAP_CMD, path, unwrap_prefix]
         unwrap_args += args
 
-        # asdcp-unwrap writes the essence to the given prefix, but emits
-        # ANCILLARY RESOURCES (e.g. the font of a timed text asset) into the
-        # process working directory under their bare UUID. Left alone, those
-        # land wherever the host application happens to be running: the caller
-        # then cannot find them here (a guaranteed false "missing font file"
-        # on any conformant SMPTE DCP with an embedded font) and the host
-        # directory accumulates a stray file on every run.
-        #
-        # The working directory is moved around the call rather than passed as
-        # an argument: execute_command is a documented seam that host
-        # applications wrap for logging, and adding a keyword argument breaks
-        # any wrapper carrying the original signature. unwrap_prefix is an
-        # absolute path, so the essence output is unaffected.
+        # asdcp-unwrap writes essence to the (absolute) prefix, but emits
+        # ANCILLARY RESOURCES (e.g. a timed-text font) into the process working
+        # directory under their bare UUID. Relocate whatever it newly creates
+        # there into tmp so the caller finds it. We do NOT chdir for the
+        # extraction: unwrap_mxf is also the audio path (stat_mxf_audio, -1
+        # mono split), where changing the working directory makes asdcp-unwrap
+        # fail and silently drops AudioAnalyze from probe output.
         cwd = os.getcwd()
-        try:
-            os.chdir(tmp)
-            execute_command(unwrap_args)
-        finally:
-            os.chdir(cwd)
+        before = set(os.listdir(cwd))
+        execute_command(unwrap_args)
+        for name in set(os.listdir(cwd)) - before:
+            try:
+                shutil.move(os.path.join(cwd, name), os.path.join(tmp, name))
+            except OSError:
+                pass
         yield tmp
 
 
