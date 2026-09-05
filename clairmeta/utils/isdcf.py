@@ -71,7 +71,7 @@ RULES = {
         'Resolution': r'(^2K|4K$)',
         'Studio': r'(^[A-Z0-9]{2,4}$)',
         'Date': r'(^\d{8}$)',
-        'Facility': r'(^[A-Z0-9]{2,3}$)',
+        'Facility': r'(^[A-Z0-9]{2,4}$)',
         'Standard':
             r'(^'
             r'(?P<Schema>(IOP|SMPTE))'
