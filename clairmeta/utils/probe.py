@@ -3,6 +3,7 @@
 
 import os
 import platform
+import shutil
 import subprocess
 import xmltodict
 import contextlib
@@ -219,7 +220,21 @@ def unwrap_mxf(path, prefix=None, args=[]):
         unwrap_args = [ASDCP_UNWRAP_CMD, path, unwrap_prefix]
         unwrap_args += args
 
+        # asdcp-unwrap writes essence to the (absolute) prefix, but emits
+        # ANCILLARY RESOURCES (e.g. a timed-text font) into the process working
+        # directory under their bare UUID. Relocate whatever it newly creates
+        # there into tmp so the caller finds it. We do NOT chdir for the
+        # extraction: unwrap_mxf is also the audio path (stat_mxf_audio, -1
+        # mono split), where changing the working directory makes asdcp-unwrap
+        # fail and silently drops AudioAnalyze from probe output.
+        cwd = os.getcwd()
+        before = set(os.listdir(cwd))
         execute_command(unwrap_args)
+        for name in set(os.listdir(cwd)) - before:
+            try:
+                shutil.move(os.path.join(cwd, name), os.path.join(tmp, name))
+            except OSError:
+                pass
         yield tmp
 
 

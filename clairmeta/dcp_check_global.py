@@ -53,16 +53,22 @@ class Checker(CheckerBase):
 
         References: N/A
         """
+        # AssetMap <Path> values use forward slashes; _list_files comes from
+        # os.walk and uses the platform separator. On Windows an asset in a
+        # sub-directory (the normal Interop layout, where the subtitle XML and
+        # its font live in a UUID-named folder) therefore never compares equal
+        # and is reported as foreign although it IS listed. Normalise both sides.
         list_asset_path = [
-            os.path.join(self.dcp.path, a) for a in self.dcp._list_asset.values()
+            os.path.normpath(os.path.join(self.dcp.path, a))
+            for a in self.dcp._list_asset.values()
         ]
-        list_asset_path += self.dcp._list_vol_path
-        list_asset_path += self.dcp._list_am_path
+        list_asset_path += [os.path.normpath(p) for p in self.dcp._list_vol_path]
+        list_asset_path += [os.path.normpath(p) for p in self.dcp._list_am_path]
 
         self.dcp.foreign_files = [
             os.path.relpath(a, self.dcp.path)
             for a in self.dcp._list_files
-            if a not in list_asset_path
+            if os.path.normpath(a) not in list_asset_path
             and not any([re.search(i, a) for i in self.allowed_foreign_files])
         ]
         if self.dcp.foreign_files:
@@ -79,7 +85,11 @@ class Checker(CheckerBase):
         }
 
         for k, v in restricted_lists.items():
-            if len(v) == 0:
+            # VolumeIndex is deprecated (ST 429-9:2014 section 8) and optional;
+            # only the AssetMap is mandatory. A conformant single-volume SMPTE
+            # DCP commonly omits VOLINDEX, so do not flag a missing one. Having
+            # more than one of either file remains an error.
+            if len(v) == 0 and k == "Assetmap":
                 self.error("Missing {} file".format(k))
             if len(v) > 1:
                 self.error("Multiple {} files found".format(k))
