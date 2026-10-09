@@ -69,7 +69,7 @@ class Checker(CheckerBase):
             os.path.relpath(a, self.dcp.path)
             for a in self.dcp._list_files
             if os.path.normpath(a) not in list_asset_path
-            and not any([re.search(i, a) for i in self.allowed_foreign_files])
+            and not any(re.search(i, a) for i in self.allowed_foreign_files)
         ]
         if self.dcp.foreign_files:
             self.error("\n".join(self.dcp.foreign_files))
@@ -90,7 +90,7 @@ class Checker(CheckerBase):
             # DCP commonly omits VOLINDEX, so do not flag a missing one. Having
             # more than one of either file remains an error.
             if len(v) == 0 and k == "Assetmap":
-                self.error("Missing {} file".format(k))
+                self.error(f"Missing {k} file")
             if len(v) > 1:
                 self.error(f"Multiple {k} files found")
 

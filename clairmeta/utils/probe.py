@@ -4,7 +4,6 @@
 import contextlib
 import os
 import platform
-import shutil
 import subprocess
 from shutil import which
 
@@ -210,6 +209,9 @@ def unwrap_mxf(path, prefix=None, args=()):
     if not check_command(ASDCP_UNWRAP_CMD):
         raise CommandException(f"{ASDCP_UNWRAP_CMD} not available")
 
+    # We are using chdir() below, so we make sure to use an absolute path
+    path = os.path.abspath(path)
+
     with temporary_dir() as tmp:
         if prefix:
             unwrap_prefix = os.path.join(tmp, prefix)
@@ -219,21 +221,15 @@ def unwrap_mxf(path, prefix=None, args=()):
 
         unwrap_args = [ASDCP_UNWRAP_CMD, path, unwrap_prefix, *args]
 
-        # asdcp-unwrap writes essence to the (absolute) prefix, but emits
-        # ANCILLARY RESOURCES (e.g. a timed-text font) into the process working
-        # directory under their bare UUID. Relocate whatever it newly creates
-        # there into tmp so the caller finds it. We do NOT chdir for the
-        # extraction: unwrap_mxf is also the audio path (stat_mxf_audio, -1
-        # mono split), where changing the working directory makes asdcp-unwrap
-        # fail and silently drops AudioAnalyze from probe output.
+        # asdcp-unwrap writes the essence to the given prefix, but emits
+        # ANCILLARY RESOURCES (e.g. the font of a timed text asset) into the
+        # process working directory under their bare UUID.
         cwd = os.getcwd()
-        before = set(os.listdir(cwd))
-        execute_command(unwrap_args)
-        for name in set(os.listdir(cwd)) - before:
-            try:
-                shutil.move(os.path.join(cwd, name), os.path.join(tmp, name))
-            except OSError:
-                pass
+        try:
+            os.chdir(tmp)
+            execute_command(unwrap_args)
+        finally:
+            os.chdir(cwd)
         yield tmp
 
 
