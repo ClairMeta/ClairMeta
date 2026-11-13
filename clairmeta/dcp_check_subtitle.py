@@ -531,7 +531,7 @@ class Checker(CheckerBase):
             return
 
         for st in subtitles[0]:
-            st_idx = st["Subtitle@SpotNumber"]
+            st_idx = st.get("Subtitle@SpotNumber", st["Subtitle@TimeIn"])
             st_in, st_out = st["Subtitle@TimeIn"], st["Subtitle@TimeOut"]
             dur = self.st_util.st_tc_frames(
                 st_out, editrate
@@ -604,17 +604,18 @@ class Checker(CheckerBase):
             return
 
         for idx, st in enumerate(subtitles[0]):
+            st_idx = st.get("Subtitle@SpotNumber", st["Subtitle@TimeIn"])
             text_count = count_subtitle_elements(st, "Text")
             if text_count > 6:
                 self.error(
-                    "Too many Text elements ({}, maximum is 6) for subtitle "
-                    "{}".format(text_count, st["Subtitle@SpotNumber"])
+                    f"Too many Text elements ({text_count}, maximum is 6) for subtitle "
+                    f"{st_idx}"
                 )
             img_count = count_subtitle_elements(st, "Image")
             if img_count > 3:
                 self.error(
-                    "Too many Image elements ({}, maximum is 3) for subtitle "
-                    "{}".format(img_count, st["Subtitle@SpotNumber"])
+                    f"Too many Image elements ({img_count}, maximum is 3) for subtitle "
+                    f"{st_idx}"
                 )
 
     def check_subtitle_cpl_duration(self, playlist, asset, folder):
@@ -803,14 +804,11 @@ class Checker(CheckerBase):
             return
 
         for st in subtitles[0]:
+            st_idx = st.get("Subtitle@SpotNumber", st["Subtitle@TimeIn"])
             has_image = keys_by_name_dict(st, "Image")
             has_text = keys_by_name_dict(st, "Text")
             if not has_image and not has_text:
-                self.error(
-                    "Subtitle {} element must define one Text or Image".format(
-                        st["Subtitle@SpotNumber"]
-                    )
-                )
+                self.error(f"Subtitle {st_idx} element must define one Text or Image")
 
     def check_subtitle_cpl_position(self, playlist, asset, folder):
         """Subtitles vertical position (out of screen) check.
@@ -831,7 +829,7 @@ class Checker(CheckerBase):
         flat_subs = [item for sublist in subs for item in sublist]
 
         for st in flat_subs:
-            st_idx = st["Subtitle@SpotNumber"]
+            st_idx = st.get("Subtitle@SpotNumber", st["Subtitle@TimeIn"])
             valign = keys_by_pattern_dict(st, ["@VAlign"])
             vpos = keys_by_pattern_dict(st, ["@VPosition"])
 
